@@ -18,7 +18,7 @@ def main():
     
     args = parser.parse_args()
     udp_addr = (args.udp_addr, int(args.udp_port))
-    logging.info(f"Forwarding WebSocket messages received on {args.addr}:{args.port}"
+    logging.info(f"Forwarding WebSocket messages received on {args.addr}:{args.port}")
     logging.info(f"Broadcasting UDP messages received on {args.udp_addr}:{args.udp_port}")
 
     asyncio.run(run(udp_addr, args.addr, args.port))
