@@ -1,0 +1,27 @@
+<script>
+var ProxyWebSocket = function (proxy_addr, proxy_port, addr, port) {
+    var pws = {}; 
+    pws.websocket = new WebSocket("ws://" + proxy_addr + ":" + proxy_port);
+    pws.send = function (data) {
+        // 4 bytes for the addr + 4 bytes for the port
+        var buffer = new Uint8Array(4 + addr.length + 4 + data.length),
+                addrLengthBuf = Uint32Array.from([addr.length]),
+                addrBuf = Uint8Array.from(addr.split('').map(c=>c.charCodeAt(0))),
+                portBuf = Uint32Array.from([port]),
+                dataBuf = Uint8Array.from(data.split('').map(c=>c.charCodeAt(0)));
+        buffer.set(new Uint8Array(addrLengthBuf.buffer), 0);
+        buffer.set(addrBuf, addrLengthBuf.byteLength);
+        buffer.set(new Uint8Array(portBuf.buffer), addrLengthBuf.byteLength + addrBuf.byteLength);
+        buffer.set(dataBuf, addrLengthBuf.byteLength + addrBuf.byteLength + portBuf.byteLength);
+        pws.websocket.send(buffer);
+    };
+    return pws;
+};
+
+var pws = ProxyWebSocket("localhost", 8765, "localhost", 57120);
+
+pws.websocket.onopen = function(){
+    var msg = "hello, world";
+    pws.send("hello, world!");
+};
+</script>
