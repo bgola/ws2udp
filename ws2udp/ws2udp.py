@@ -222,7 +222,7 @@ async def run(udp_addr, websocket_addr, websocket_port):
 
     def send_broadcast(message, addr):
         for client in clients:
-            client.send_ws(data)
+            client.send_ws(message)
 
     udp_server = UDPSock(*udp_addr, datagram_received=send_broadcast)  
     await ws_server.server.serve_forever()
