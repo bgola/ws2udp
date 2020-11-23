@@ -4,7 +4,7 @@ A WebSocket to UDP proxy.
 
 **ws2udp** will forward messages coming from the WebSocket server to UDP sockets, it is especially useful
 to send OSC messages from JavaScript applications to SuperCollider or any other software that doesn't support
-WebSockets. It registers all websockets connected and will also broadcast messages sent to its own UDP port.
+WebSockets. It registers all websockets connected and will broadcast messages sent to its own UDP port.
 
 ## Installation
 
