@@ -175,14 +175,18 @@ async def ws2udp_receiver(client):
     async for message in client.websocket:
         # Parse addres and port where to send
         # Format is [addr_string_length:uint32][addr:string][port:uint32][message]
-        addr_size = struct.unpack("I", message[:4])[0]
-        message = message[4:]
-        addr = message[:addr_size]
-        message = message[addr_size:]
-        port = struct.unpack("I", message[:4])[0]
-        message = message[4:]
-
-        client.send_udp(message, (addr, port))
+        original_message = message[:]
+        try:
+            addr_size = struct.unpack("I", message[:4])[0]
+            message = message[4:]
+            addr = message[:addr_size]
+            message = message[addr_size:]
+            port = struct.unpack("I", message[:4])[0]
+            message = message[4:]
+        except TypeError:
+            logging.error(f"Got a bad message, can't parse address to forward: {original_message}")
+        else:
+            client.send_udp(message, (addr, port))
 
 
 async def ws2udp_handler(websocket, path):
