@@ -1,0 +1,35 @@
+<head>
+    <script src="osc-browser.min.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+let proxy_addr = "localhost";
+let proxy_port = 8765;
+
+// this needs osc.js from https://github.com/colinbdclark/osc.js
+let osc_client = new osc.WebSocketPort({
+    url: "ws://" + proxy_addr + ":" + proxy_port,
+    metadata: true
+});
+
+// replace send so we can proxify it
+osc_client.send = function (oscPacket, addr, port) {
+    var args = Array.prototype.slice.call(arguments),
+        encoded = this.encodeOSC(oscPacket),
+        dataBuf = osc.nativeBuffer(encoded),
+        buffer = new Uint8Array(4 + addr.length + 4 + dataBuf.byteLength),
+        addrLengthBuf = Uint32Array.from([addr.length]),
+        addrBuf = Uint8Array.from(addr.split('').map(c=>c.charCodeAt(0))),
+        portBuf = Uint32Array.from([port]);
+    buffer.set(new Uint8Array(addrLengthBuf.buffer), 0);
+    buffer.set(addrBuf, addrLengthBuf.byteLength);
+    buffer.set(new Uint8Array(portBuf.buffer), addrLengthBuf.byteLength + addrBuf.byteLength);
+    buffer.set(dataBuf, addrLengthBuf.byteLength + addrBuf.byteLength + portBuf.byteLength);
+    args[0] = buffer;
+    this.sendRaw.apply(this, args);
+};
+
+osc_client.on("ready", function() {
+    osc_client.send({address: "/helloworld"}, "localhost", 57120); 
+});
+osc_client.open();
+</script>
