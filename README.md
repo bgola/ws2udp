@@ -21,7 +21,7 @@ optional arguments:
 
 The server expects binary messages following the format:
 
-`*address_length*(uint32)*address*(string)*port*(uint32)*data*`
+**address_length**(uint32)**address**(string)**port**(uint32)**data**
 
 * _address_length_ is an integer representing the total length of the address
 * _address_ the address where to forward the data as a string (example: localhost)
@@ -32,4 +32,4 @@ For example, to send the message `hello world` to `localhost:57120`, one would s
 
 `b'\x09\x00\x00\x00localhost\x20\xdf\x00\x00hello, world'`
 
-The first 4 bytes `b'\t\x00\x00\x00` represents 9, then comes `b'localhost'` and lastly `b'\x20\xdf\x00\x00'` for 57120. Whatever comes after this is forwarded.
+The first 4 bytes `b'\x09\x00\x00\x00` represents 9, then comes `b'localhost'` and lastly `b'\x20\xdf\x00\x00'` for 57120. Whatever comes after this is forwarded.
