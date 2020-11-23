@@ -4,6 +4,7 @@ A WebSocket to UDP proxy.
 
 ## Installation
 
+`$ pip install ws2udp`
 
 ## Usage:
 
