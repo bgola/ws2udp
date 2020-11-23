@@ -175,7 +175,6 @@ async def ws2udp_receiver(client):
     async for message in client.websocket:
         # Parse addres and port where to send
         # Format is [addr_string_length:uint32][addr:string][port:uint32][message]
-        print(message)
         addr_size = struct.unpack("I", message[:4])[0]
         message = message[4:]
         addr = message[:addr_size]
