@@ -22,6 +22,4 @@ def main():
     logging.info(f"Broadcasting UDP messages received on {args.udp_addr}:{args.udp_port}")
 
     asyncio.run(run(udp_addr, args.addr, args.port))
-
-    asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()

@@ -212,9 +212,12 @@ async def ws2udp_handler(websocket, path):
         for task in done:
             # trigger exceptions, if any
             task.result()
-    except websockets.exceptions.ConnectionClosedError:
-        # Catches when something went wrong with the connection
-        logging.info("ConnectionClosedError")
+    except (
+            websockets.exceptions.ConnectionClosedError,
+            websockets.exceptions.ConnectionClosedOK,
+            asyncio.exceptions.CancelledError):
+        # Connection ended
+        pass
 
     logging.info(f"Client {client.websocket.remote_address} left")
     await client.leave()
