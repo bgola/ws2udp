@@ -35,8 +35,8 @@ class UDPSock:
         self.loop = loop
         self._sock.bind((addr, port))
        
-        self._sender = asyncio.ensure_future(self._send_periodically())
-        self._receiver = asyncio.ensure_future(self._recv_periodically())
+        self._sender = asyncio.create_task(self._send_periodically())
+        self._receiver = asyncio.create_task(self._recv_periodically())
 
     def sendto(self, data, addr):
         self._send_queue.append((data, addr))
@@ -44,9 +44,15 @@ class UDPSock:
 
     async def quit(self):
         self._sender.cancel()
-        await self._sender
+        try:
+            await self._sender
+        except asyncio.CancelledError:
+            pass
         self._receiver.cancel()
-        await self._receiver
+        try:
+            await self._sender
+        except asyncio.CancelledError:
+            pass
         self._sock.close()
 
     def getsockname(self):
@@ -219,9 +225,9 @@ async def ws2udp_handler(websocket, path):
         # Connection ended
         pass
 
-    logging.info(f"Client {client.websocket.remote_address} left")
     await client.leave()
     clients.remove(client)
+    logging.info(f"Client{client.websocket.remote_address} left")
 
 
 async def run(udp_addr, websocket_addr, websocket_port):
