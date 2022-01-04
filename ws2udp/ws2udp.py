@@ -53,6 +53,8 @@ class UDPSock:
             await self._sender
         except asyncio.CancelledError:
             pass
+
+        self.loop.remove_reader(self._sock.fileno())
         self._sock.close()
 
     def getsockname(self):
