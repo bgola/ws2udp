@@ -31,5 +31,13 @@ osc_client.send = function (oscPacket, addr, port) {
 osc_client.on("ready", function() {
     osc_client.send({address: "/helloworld"}, "localhost", 57120); 
 });
+
+osc_client.on("message", osc_dispatcher);
+
+function osc_dispatcher(osc_msg) {
+    var args = []    
+    osc_msg.args.forEach( (arg) => args.push(arg.value) );
+    document.body.innerHTML = `<span>${osc_msg.address},${args}</span>` + document.body.innerHTML
+}
 osc_client.open();
 </script>
