@@ -5,12 +5,12 @@ with open("README.md", "r") as fh:
 
 setup(name='ws2udp',
       version='0.1.6',
-      author='Bruno Gola',
-      author_email='me@bgo.la',
+      author='Bruno Gola, additions by Thomas Grill',
+      author_email='me@bgo.la, gr@grrrr.org',
       description='A WebSocket to UDP proxy',
       long_description=long_description,
       long_description_content_type="text/markdown",
-      url="https://github.com/bgola/ws2udp",
+      url="https://github.com/grrrr/ws2udp",
       packages=find_namespace_packages(include=['ws2udp']),
 	  classifiers=[
           "Programming Language :: Python :: 3",

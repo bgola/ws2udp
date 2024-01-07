@@ -25,6 +25,7 @@ optional arguments:
   --udp-addr UDP_ADDR  Address of the UDP receiver for broadcasting messages (default=localhost)
   --udp-port UDP_PORT  Port of the UDP receiver (default=57142)
   --addr ADDR          WebSocket address to listen (default=0.0.0.0)
+  --broadcast          Enable UDP broadcasting
   --port PORT          WebSocket port to listen (default=8765)
 ```
 
