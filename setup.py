@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='ws2udp',
-      version='0.1.6',
+      version='0.1.7',
       author='Bruno Gola, additions by Thomas Grill',
       author_email='me@bgo.la, gr@grrrr.org',
       description='A WebSocket to UDP proxy',
