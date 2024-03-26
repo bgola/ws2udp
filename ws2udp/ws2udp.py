@@ -167,73 +167,83 @@ class Client:
         self.send_ws(message)
 
 
-async def ws2udp_sender(client):
-    """
-    Sends UDP message received to WebSocket
-    """
-    while True:
-        message = await client.queue.get()
-        await client.websocket.send(message)
+class Handler:
+    def __init__(self, fwd_address=None):
+        self.fwd_address = fwd_address
 
 
-async def ws2udp_receiver(client):
-    """
-    Receives UDP message via WebSocket and forwards to UDP.
-    """
-    async for message in client.websocket:
-        # Parse addres and port where to send
-        # Format is [addr_string_length:uint32][addr:string][port:uint32][message]
-        original_message = message[:]
+    async def ws2udp_sender(self, client):
+        """
+        Sends UDP message received to WebSocket
+        """
+        while True:
+            message = await client.queue.get()
+            await client.websocket.send(message)
+
+
+    async def ws2udp_receiver(self, client):
+        """
+        Receives UDP message via WebSocket and forwards to UDP.
+        """
+        async for message in client.websocket:
+            if self.fwd_address is None:
+                # Parse addres and port where to send
+                # Format is [addr_string_length:uint32][addr:string][port:uint32][message]
+                original_message = message[:]
+                try:
+                    addr_size = struct.unpack("I", message[:4])[0]
+                    message = message[4:]
+                    addr = message[:addr_size]
+                    message = message[addr_size:]
+                    port = struct.unpack("I", message[:4])[0]
+                    message = message[4:]
+                except TypeError:
+                    logging.error(f"Got a bad message, can't parse address to forward: {original_message}")
+                else:
+                    client.send_udp(message, (addr, port))
+            else:
+                # No parsing - directly forwarding original message
+                client.send_udp(message, self.fwd_address)
+
+
+    async def ws2udp_handler(self, websocket, path):
+        """
+        Wrapper handler for both way communication.
+        """
+        client = Client(websocket)
+        clients.append(client)
+
+        receiver = asyncio.ensure_future(
+            self.ws2udp_receiver(client))
+        sender = asyncio.ensure_future(
+            self.ws2udp_sender(client))
+
         try:
-            addr_size = struct.unpack("I", message[:4])[0]
-            message = message[4:]
-            addr = message[:addr_size]
-            message = message[addr_size:]
-            port = struct.unpack("I", message[:4])[0]
-            message = message[4:]
-        except TypeError:
-            logging.error(f"Got a bad message, can't parse address to forward: {original_message}")
-        else:
-            client.send_udp(message, (addr, port))
+            done, pending = await asyncio.wait(
+                [receiver, sender],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            for task in pending:
+                task.cancel()
+            for task in done:
+                # trigger exceptions, if any
+                task.result()
+        except (
+                websockets.exceptions.ConnectionClosedError,
+                websockets.exceptions.ConnectionClosedOK,
+                asyncio.exceptions.CancelledError):
+            # Connection ended
+            pass
+
+        await client.leave()
+        clients.remove(client)
+        logging.info(f"Client{client.websocket.remote_address} left")
 
 
-async def ws2udp_handler(websocket, path):
-    """
-    Wrapper handler for both way communication.
-    """
-    client = Client(websocket)
-    clients.append(client)
-
-    receiver = asyncio.ensure_future(
-        ws2udp_receiver(client))
-    sender = asyncio.ensure_future(
-        ws2udp_sender(client))
-    
-    try:
-        done, pending = await asyncio.wait(
-            [receiver, sender],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-        
-        for task in pending:
-            task.cancel()
-        for task in done:
-            # trigger exceptions, if any
-            task.result()
-    except (
-            websockets.exceptions.ConnectionClosedError,
-            websockets.exceptions.ConnectionClosedOK,
-            asyncio.exceptions.CancelledError):
-        # Connection ended
-        pass
-
-    await client.leave()
-    clients.remove(client)
-    logging.info(f"Client{client.websocket.remote_address} left")
-
-
-async def run(udp_addr, websocket_addr, websocket_port):
-    ws_server = await websockets.serve(ws2udp_handler, websocket_addr, websocket_port)
+async def run(udp_addr, websocket_addr, websocket_port, fwd_addr=None):
+    handler = Handler(fwd_addr)
+    ws_server = await websockets.serve(handler.ws2udp_handler, websocket_addr, websocket_port)
 
     def send_broadcast(message, addr):
         for client in clients:
