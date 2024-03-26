@@ -17,6 +17,7 @@ def main():
     parser.add_argument("--fwd-port", default="57143", help="Port of the UDP target (default=%(default)s)")
     parser.add_argument("--addr", default="0.0.0.0", help="WebSocket address to listen (default=%(default)s)")
     parser.add_argument("--port", default=8765, help="WebSocket port to listen (default=%(default)s)")
+    parser.add_argument("--broadcast", action='store_true', help="Enable UDP broadcasting")
     parser.add_argument("--quiet", action='store_true', help="No verbose output")
 
     args = parser.parse_args()
@@ -36,7 +37,7 @@ def main():
         fwd_addr = None
 
     try:
-        asyncio.run(run(udp_addr, args.addr, args.port, fwd_addr=fwd_addr))
+        asyncio.run(run(udp_addr, args.addr, args.port, fwd_addr=fwd_addr, enable_broadcast=args.broadcast))
         asyncio.get_event_loop().run_forever()
     except KeyboardInterrupt:
         logging.info("Quitting...")

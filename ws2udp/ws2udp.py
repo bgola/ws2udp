@@ -16,9 +16,11 @@ class UDPSock:
     Class forked / modified from 
     https://github.com/bashkirtsevich-llc/aioudp
     """
-    def __init__(self, addr='', port=0, loop=None, datagram_received=None):
+    def __init__(self, addr='', port=0, loop=None, datagram_received=None, enable_broadcast=False):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if enable_broadcast:
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self._sock.setblocking(False)
 
         self._send_event = asyncio.Event()
@@ -132,11 +134,11 @@ class Client:
     Keeps a map of ports used for proxying UDP messages and uses a queue
     for sending UDP messages back to the websocket.
     """
-    def __init__(self, websocket):
+    def __init__(self, websocket, enable_broadcast=False):
         logging.info(f"New WebSocket client from {websocket.remote_address}")
         self.websocket = websocket
         
-        self._sock = UDPSock(datagram_received=self._got_udp_message)
+        self._sock = UDPSock(datagram_received=self._got_udp_message, enable_broadcast=enable_broadcast)
         logging.info(f"{self} listening to UDP messages on {self._sock.getsockname()}")
 
         self.queue = asyncio.Queue()
@@ -168,8 +170,9 @@ class Client:
 
 
 class Handler:
-    def __init__(self, fwd_address=None):
+    def __init__(self, fwd_address=None, enable_broadcast=False):
         self.fwd_address = fwd_address
+        self.enable_broadcast = enable_broadcast
 
 
     async def ws2udp_sender(self, client):
@@ -210,7 +213,7 @@ class Handler:
         """
         Wrapper handler for both way communication.
         """
-        client = Client(websocket)
+        client = Client(websocket, self.enable_broadcast)
         clients.append(client)
 
         receiver = asyncio.ensure_future(
@@ -241,8 +244,8 @@ class Handler:
         logging.info(f"Client{client.websocket.remote_address} left")
 
 
-async def run(udp_addr, websocket_addr, websocket_port, fwd_addr=None):
-    handler = Handler(fwd_addr)
+async def run(udp_addr, websocket_addr, websocket_port, fwd_addr=None, enable_broadcast=False):
+    handler = Handler(fwd_addr, enable_broadcast)
     ws_server = await websockets.serve(handler.ws2udp_handler, websocket_addr, websocket_port)
 
     def send_broadcast(message, addr):
